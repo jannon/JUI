@@ -24,9 +24,9 @@
 	<property name="jsdoctemplate.dir" value="${build.dir}/jsdoc-jui" />
 	<property name="lib.dir" value="${build.dir}/lib"/>
 
-    <property name="ui.dir" value="../" />
-    <property name="src.dir" value="${ui.dir}/ui/" />
-    <property name="theme.dir" value="${ui.dir}/themes/base/" />
+    <property name="ui.dir" value=".." />
+    <property name="src.dir" value="${ui.dir}/ui" />
+    <property name="theme.dir" value="${ui.dir}/themes/base" />
     <property name="docs.dir" value="${dist.dir}/docs" />
     <property name="min.dir" value="${dist.dir}/ui/minified" />
     <property name="size.dir" value="size" />
@@ -328,7 +328,9 @@
 
     <target name="docs" depends="prepdocs,template-install" description="Generates documenation for JUI">
         <mkdir dir="${docs.dir}" />
-        <jsdoc jsdochome="${jsdoc.home}" template="jui" to="${docs.dir}" dir="${src.dir}" />
+        <jsdoc jsdochome="${jsdoc.home}" template="jui" to="${docs.dir}" dir="${src.dir}">
+        	<arg line="-q cssDir=${theme.dir}"/>
+        </jsdoc>
     </target>
 
     <target name="themes-download">
