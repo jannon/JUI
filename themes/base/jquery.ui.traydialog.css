@@ -1,0 +1,28 @@
+.ui-dialog .ui-traydialog-content  {
+    display: inline-block;
+    padding: 0;
+    overflow: hidden;
+}
+
+.ui-traydialog.ui-traydialog-inline-buttons div.ui-dialog-buttonpane {
+    float: right;
+    padding: 0;
+    border: 0 none #ffffff;
+    margin: 0;
+}
+
+.ui-traydialog.ui-traydialog-inline-buttons div.ui-dialog-buttonpane button { padding: 2px; margin:0 2px 0 0; font-size: 8pt; }
+.ui-traydialog.ui-traydialog-inline-buttons div.ui-dialog-buttonpane .ui-button-text-only .ui-button-text { padding: 2px; }
+
+.ui-traydialog.ui-traydialog-block-buttons div.ui-dialog-buttonpane button { padding: 2px; font-size: 8pt; }
+
+div.ui-traydialog .ui-dialog-titlebar { display: none; }
+
+div.ui-traydialog {
+    padding:2px 0 1px 0;
+    border-left-width: 0;
+    -moz-border-radius-topleft: 0;
+    -moz-border-radius-bottomleft: 0;
+    -webkit-border-top-left-radius: 0;
+    -webkit-border-bottom-left-radius: 0;
+}

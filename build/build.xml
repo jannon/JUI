@@ -1,0 +1,404 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+
+<project name="jui" default="dist" basedir=".">
+	<import file="build-common.xml"/>
+	
+    <taskdef resource="net/sf/antcontrib/antcontrib.properties">
+        <classpath>
+            <pathelement location="build/ant-contrib-0.6.jar" />
+        </classpath>
+    </taskdef>
+
+    <property file="ant.properties" />
+
+    <loadfile failonerror="no" srcFile="../version.txt" property="release.version">
+        <filterchain>
+            <striplinebreaks />
+        </filterchain>
+    </loadfile>
+    <property name="release.filename" value="jui-${release.version}" />
+
+    <property name="dist.dir" value="dist/${release.filename}" />
+    <property name="build.dir" value="build" />
+    <property name="extern.dir" value="${build.dir}/externs" />
+	<property name="jsdoctemplate.dir" value="${build.dir}/jsdoc-jui" />
+	<property name="lib.dir" value="${build.dir}/lib"/>
+
+    <property name="ui.dir" value="../" />
+    <property name="src.dir" value="${ui.dir}/ui/" />
+    <property name="theme.dir" value="${ui.dir}/themes/base/" />
+    <property name="docs.dir" value="${dist.dir}/docs" />
+    <property name="min.dir" value="${dist.dir}/ui/minified" />
+    <property name="size.dir" value="size" />
+
+    <property name="concatenated" value="jui" />
+    <property name="concatenated.i18n" value="jui-i18n" />
+
+    <property description="YUI Compressor" name="yuicompressor-jar" value="${build.dir}/yuicompressor-2.4.2.jar" />
+    <property description="Google Closure Compiler" name="closurecompiler-jar" value="${build.dir}/closurecompiler.jar" />
+    <property description="Google Closure Compiler Compilation Level" name="compilation.level" value="SIMPLE_OPTIMIZATIONS" />
+    
+	<property description="jQuery 1.7 Externs" name="jquery.externs" value="${extern.dir}/jquery-1.7.externs.js" />
+    <property description="jQuery UI 1.8.16 Externs" name="jqueryui.externs" value="${extern.dir}/jquery-ui-1.8.16.externs.js" />
+    <property description="console Externs" name="console.externs" value="${extern.dir}/console.externs.js" />
+	<property description="Custom Widget Externs" name="widget.externs" value="${extern.dir}/widget.externs.js" />
+    
+	<property description="JSLint" name="jslint-jar" value="${build.dir}/jslint4java-2.0.2.jar" />
+    <taskdef name="jslint" classname="com.googlecode.jslint4java.ant.JSLintTask" classpath="${jslint-jar}" />
+
+	<property description="Rhino" name="rhino-jar" value="${lib.dir}/js-1.7r3_jsdoc.jar" />
+	<property description="JSDoc" name="jsdoc-jar" value="${build.dir}/jsdoc3-ant-task-1.0.jar" />
+    <taskdef name="jsdoc" classname="net.jannon.ant.tasks.JsDoc3" classpath="${jsdoc-jar}:${rhino-jar}"/>
+	
+    <target name="dist" depends="clean, docs, copy, minify, replace-version, prepend-header, zip" description="Release builder" />
+
+    <target name="replace-version">
+        <replaceregexp match="@VERSION" replace="${release.version}" flags="g" byline="true">
+            <fileset dir="${dist.dir}/ui/" includes="*.js" />
+            <fileset dir="${dist.dir}/ui/minified/" includes="*.js" />
+            <fileset dir="${dist.dir}/themes/" includes="**/*.css" />
+        </replaceregexp>
+        <echo message="Replaced all @VERSION to ${release.version}." />
+    </target>
+
+    <target name="prepend-header">
+        <!-- TODO -->
+        <copy todir="${dist.dir}/headers/">
+            <fileset dir="${dist.dir}/themes/base" includes="*.css" />
+        </copy>
+        <replaceregexp match="^(\/\*.*?\*\/\s).+" replace="\1" flags="s">
+            <fileset dir="${dist.dir}/headers/" includes="*.css" />
+        </replaceregexp>
+        <for param="file">
+            <path>
+                <fileset dir="${dist.dir}/themes/base/minified" includes="*.css" />
+            </path>
+            <sequential>
+                <propertyregex override="yes" property="target" input="@{file}" regexp=".*[\\/](.+)\.min\.css$" replace="\1" />
+                <concat destfile="${dist.dir}/ui-headered/${target}.min.css">
+                    <header file="${dist.dir}/headers/${target}.css" />
+                    <fileset file="@{file}" />
+                </concat>
+            </sequential>
+        </for>
+        <copy todir="${dist.dir}/themes/base/minified" overwrite="true">
+            <fileset dir="${dist.dir}/ui-headered/" includes="*.css" />
+        </copy>
+
+        <delete dir="${dist.dir}/headers/" />
+        <delete dir="${dist.dir}/ui-headered/" />
+    </target>
+
+    <target description="Zip the package" name="zip">
+        <zip destfile="${dist.dir}/../${release.filename}.zip">
+            <zipfileset dir="dist/" />
+        </zip>
+    </target>
+
+    <target name="jslint" description="Run JSLint on the source">
+        <jslint options="undef,white,nomen,plusplus,sloppy,browser" haltOnFailure="false">
+            <predef>jQuery,$$</predef>
+            <formatter type="plain" />
+            <fileset dir="${src.dir}" includes="jquery.ui.*.js" />
+        </jslint>
+    </target>
+
+    <target name="concatenate">
+        <echo message="Building concatenated" />
+        <mkdir dir="${dist.dir}/ui/" />
+        <delete file="${dist.dir}/ui/${concatenated}.js" />
+
+        <concat destfile="${dist.dir}/ui/${concatenated}.js">
+            <fileset dir="${src.dir}/" includes="jquery.ui.*.js" />
+        </concat>
+        <echo message="Concatenated built." />
+
+        <concat destfile="${dist.dir}/themes/base/${concatenated}.css">
+            <fileset dir="${theme.dir}/" includes="jquery.ui.*.css" />
+        </concat>
+        <echo message="Concatenated theme." />
+
+        <mkdir dir="${dist.dir}/ui/i18n/" />
+        <delete file="${dist.dir}/ui/i18n/${concatenated.i18n}.js" />
+
+        <concat destfile="${dist.dir}/ui/i18n/${concatenated.i18n}.js" encoding="utf-8">
+            <fileset dir="${src.dir}/i18n/" includes="jquery.ui.*.js" />
+        </concat>
+        <echo message="Concatenated i18n built." />
+    </target>
+    
+    <target name="externs">
+        <echo message="Gathering externs" />
+        <concat destfile="${widget.externs}">
+            <header filtering="no" trimleading="yes">
+               /*
+                * Externs for the jQuery UI widgets defined in the source file
+                * ============================================================
+                * THIS FILE IS GENERATED DYNAMICALLY.  Changes will be
+                * overwritten.
+                * ============================================================
+                */
+            </header>
+            <fileset dir="${src.dir}/" includes="jquery.ui.*.js" />
+            <filterchain>
+                <linecontains>
+                    <contains value="$.widget("/>
+                </linecontains>
+            </filterchain>
+        </concat>
+        
+    	<replaceregexp match="\$\.widget\(&quot;" replace="jQuery." flags="g" byline="true">
+            <path path="${widget.externs}" />
+        </replaceregexp>
+    	
+    	<replaceregexp match="&quot;, \{" replace=" = \{\};" flags="g" byline="true">
+            <path path="${widget.externs}" />
+        </replaceregexp>
+        <echo message="Finished externs" />
+    </target>
+
+    <target name="minify" depends="jslint, externs, concatenate" description="Remove all comments and whitespace, no compression, great in combination with GZip">
+        <echo message="Building minified" />
+        <mkdir dir="${min.dir}" />
+        <mkdir dir="${min.dir}/i18n/" />
+        <mkdir dir="${dist.dir}/themes/base/minified" />
+        <parallel threadsperprocessor="1">
+            <apply executable="java" parallel="false">
+                <fileset dir="${dist.dir}/ui" includes="**.js" />
+                <arg line="-jar" />
+                <arg path="${closurecompiler-jar}" />
+                <arg line="--charset utf-8" />
+                <arg line="--warning_level VERBOSE" />
+                <arg line="--compilation_level ${compilation.level}" />
+                <arg line="--externs ${jquery.externs}" />
+                <arg line="--externs ${jqueryui.externs}" />
+            	<arg line="--externs ${widget.externs}" />
+                <arg line="--externs ${console.externs}" />
+                <arg line="--js" />
+                <srcfile />
+                <arg line="--js_output_file" />
+                <mapper type="glob" from="*.js" to="${min.dir}/*.min.js" />
+                <targetfile />
+            </apply>
+            <apply executable="java" parallel="false">
+                <fileset dir="${dist.dir}/ui/i18n" includes="**.js" />
+                <arg line="-jar" />
+                <arg path="${closurecompiler-jar}" />
+                <arg line="--charset utf-8" />
+                <arg line="--warning_level VERBOSE" />
+                <arg line="--compilation_level ${compilation.level}" />
+                <arg line="--externs ${jquery.externs}" />
+                <arg line="--externs ${jqueryui.externs}" />
+            	<arg line="--externs ${widget.externs}" />
+                <arg line="--externs ${console.externs}" />
+                <arg line="--js" />
+                <srcfile />
+                <arg line="--js_output_file" />
+                <mapper type="glob" from="*.js" to="${min.dir}/i18n/*.min.js" />
+                <targetfile />
+            </apply>
+            <apply executable="java" parallel="false">
+                <fileset dir="${dist.dir}/themes/base" includes="*.css" />
+                <arg line="-jar" />
+                <arg path="${yuicompressor-jar}" />
+                <arg line="--charset utf-8" />
+                <arg line="-v" />
+                <srcfile />
+                <arg line="-o" />
+                <mapper type="glob" from="*.css" to="${dist.dir}/themes/base/minified/*.min.css" />
+                <targetfile />
+            </apply>
+        </parallel>
+
+        <replaceregexp match=".css" replace=".min.css" flags="g">
+            <fileset dir="${dist.dir}/themes/base/minified/">
+                <include name="*.base.min.css" />
+                <include name="*.all.min.css" />
+            </fileset>
+        </replaceregexp>
+
+        <!-- make a copy of all theme images to ensure that relative paths in minified css files work -->
+        <copy todir="${dist.dir}/themes/base/minified/images" failonerror="false">
+            <fileset dir="${ui.dir}/themes/base/images" />
+        </copy>
+
+        <!-- make a copy of the minified files for use in tests -->
+        <copy todir="dist" file="${min.dir}/jui.min.js" />
+        <copy todir="dist/theme" file="${dist.dir}/themes/base/minified/jui.min.css" />
+        <copy todir="dist/theme/images" failonerror="false">
+            <fileset dir="${ui.dir}/themes/base/images" />
+        </copy>
+
+        <echo message="Minified ui/ built." />
+    </target>
+
+    <target description="Copy needed folders" name="copy">
+        <echo message="Copying files" />
+        <mkdir dir="${dist.dir}" />
+
+        <copy overwrite="true" todir="${dist.dir}/">
+            <fileset dir="${ui.dir}/" includes="jui-*.js" />
+        </copy>
+
+        <copy overwrite="true" todir="${dist.dir}/ui/">
+            <fileset dir="${src.dir}/" includes="jquery.ui.*.js" />
+        </copy>
+
+        <copy overwrite="true" todir="${dist.dir}/ui/i18n/" failonerror="false">
+            <fileset dir="${src.dir}/i18n/" />
+        </copy>
+
+        <copy overwrite="true" todir="${dist.dir}/">
+            <fileset dir="${ui.dir}/" includes="*.txt" />
+        </copy>
+
+        <!--
+        <copy overwrite="true" todir="${dist.dir}/demos/">
+            <fileset dir="${ui.dir}/demos/" />
+        </copy>
+
+        <copy overwrite="true" todir="${dist.dir}/external/">
+            <fileset dir="${ui.dir}/external/" />
+        </copy>
+
+        <copy overwrite="true" todir="${dist.dir}/tests/">
+            <fileset dir="${ui.dir}/tests/" />
+        </copy>
+
+        <copy overwrite="true" todir="${dist.dir}/themes/">
+            <fileset dir="${ui.dir}/themes/" />
+        </copy>
+        -->
+        <echo message="Files copied." />
+    </target>
+
+    <target name="clean">
+        <delete dir="dist" />
+    </target>
+
+	<target name="prepdocs">
+		<if>
+            <isset property="jsdoc.home"/>
+            <then>
+            	<!-- Check if the template needs to be installed -->
+                <condition property="templateInstall.required">
+                    <or>
+                        <uptodate property="plugin.outofdate"
+                        	   srcfile="${jsdoc.home}/plugins/jquery-ui-widget.js"
+                        	   targetfile="${jsdoctemplate.dir}/plugins/jquery-ui-widget.js"/>
+                        <uptodate property="template.outofdate">
+                        	<srcfiles dir="${jsdoc.home}/templates/jui/" includes="**/*.*"/>
+                        	<identitymapper />
+                        </uptodate>
+                    </or>
+            	</condition>
+        	</then>
+		</if>
+	</target>
+	
+	<target name="template-install" if="templateInstall.required">
+        <echo message="Installing JSDoc-JUI template..." />
+		<copy file="${jsdoctemplate.dir}/plugins/jquery-ui-widget.js"
+    		  todir="${jsdoc.home}/plugins/" />
+		<copy todir="${jsdoc.home}/templates/">
+			<fileset dir="${jsdoctemplate.dir}/templates/" />			
+		</copy>
+		<copy todir="${jsdoc.home}/templates/jui/">
+            <fileset dir="${jsdoctemplate.dir}/" includes="*.md" />           
+        </copy>
+		<echo message="Patching jsdoc conf.json" />
+	    <loadfile property="jsdoc.conf" srcFile="${jsdoc.home}/conf.json" />
+		<rhinoscript><![CDATA[
+			var jsonPath = jui.getProperty("lib.dir") + "/json2.js",
+			    conf = jui.getProperty("jsdoc.home") + "/conf.json";
+			importClass(java.io.File);
+			load(jsonPath);
+		    config = JSON.parse(jui.getProperty("jsdoc.conf"));
+			if (config.plugins.indexOf('plugins/jquery-ui-widget') == -1) {
+		        config.plugins.push('plugins/jquery-ui-widget');
+			    output = JSON.stringify(config, null, "    ");
+			    echo = jui.createTask("echo");
+	            echo.setMessage(output);
+			    echo.setFile(new File(conf));
+	            echo.perform();
+		    }
+		]]></rhinoscript>
+		<echo message="Template installed." />
+	</target>
+
+    <target name="docs" depends="prepdocs,template-install" description="Generates documenation for JUI">
+        <mkdir dir="${docs.dir}" />
+        <jsdoc jsdochome="${jsdoc.home}" template="jui" to="${docs.dir}" dir="${src.dir}" />
+    </target>
+
+    <target name="themes-download">
+        <!-- to create/update query strings for the theme-file, execute this in Firebug on /download page:
+        $("select option[value!=none]").map(function() { $(this).parent().val(this.value).change(); return $(this).parents("form").serialize(); }).get().join(",");
+        -->
+        <loadfile srcFile="themes" property="urls" />
+        <property name="zip" value="${dist.dir}themes/tmp.zip" />
+        <mkdir dir="${dist.dir}themes" />
+        <for list="${urls}" param="url">
+            <sequential>
+                <get src="http://ui-dev.jquery.com/download/?@{url}" dest="${zip}" />
+                <unzip src="${zip}" dest="${dist.dir}themes/">
+                    <patternset>
+                        <include name="development-bundle/themes/**" />
+                        <exclude name="development-bundle/themes/base/**" />
+                    </patternset>
+                    <mapper type="glob" from="development-bundle/themes/*" to="*" />
+                </unzip>
+                <delete file="${zip}" />
+            </sequential>
+        </for>
+        <move todir="${dist.dir}themes/">
+            <fileset dir="${dist.dir}themes/" />
+            <mapper>
+                <mapper type="regexp" from="(.*)jquery-ui-.*custom.css" to="\1jquery-ui.css" />
+            </mapper>
+        </move>
+        <copy todir="dist/jquery-ui-themes-${release.version}">
+            <fileset dir="${dist.dir}/" includes="AUTHORS.txt,GPL-LICENSE.txt,MIT-LICENSE.txt,version.txt,themes/**" />
+        </copy>
+        <zip destfile="${dist.dir}/../jquery-ui-themes-${release.version}.zip">
+            <zipfileset dir="dist/" includes="jquery-ui-themes-${release.version}/" />
+        </zip>
+    </target>
+
+    <target name="whitespace">
+        <replaceregexp match="[\t ]+$" replace="" flags="g" byline="true">
+            <fileset dir="${src.dir}" includes="*.js" />
+            <fileset dir="${src.dir}/i18n/" includes="*.js" />
+        </replaceregexp>
+        <echo message="All trailing spaces removed." />
+    </target>
+
+    <target name="size" depends="copy, minify, replace-version, prepend-header" description="Report sizes of files">
+        <echo message="Collecting files to size" />
+        <mkdir dir="${size.dir}" />
+        <copy todir="${size.dir}">
+            <fileset dir="${dist.dir}/ui" includes="*.js" />
+            <fileset dir="${dist.dir}/ui/i18n" includes="*.js" />
+            <fileset dir="${dist.dir}/ui/minified" includes="*.js" />
+            <fileset dir="${dist.dir}/ui/minified/i18n" includes="*.js" />
+            <fileset dir="${dist.dir}/themes/base" includes="*.css" />
+            <fileset dir="${dist.dir}/themes/base/minified" includes="*.css" />
+        </copy>
+        <echo message="GZipping Minified" />
+        <apply executable="gzip">
+            <fileset dir="${size.dir}" includes="*.min.js" />
+            <fileset dir="${size.dir}" includes="*.min.css" />
+            <arg value="-c" />
+            <srcfile />
+            <redirector>
+                <outputmapper id="out" type="glob" from="*" to="${size.dir}/*.gz" />
+            </redirector>
+        </apply>
+        <echo message="Comparing file size with previous build" />
+        <exec executable="bash">
+            <arg value="-c" />
+            <arg value="wc -c ${size.dir}/* | `which node nodejs 2>/dev/null` build/sizer.js" />
+        </exec>
+        <delete dir="${size.dir}" />
+    </target>
+</project>

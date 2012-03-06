@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+
+<project name="jui-common" basedir=".">
+	<macrodef name="rhinoscript">
+        <text name="text"/>
+
+    	<sequential>
+            <!-- TODO: update classpath here -->
+            <script language="javascript" manager="bsf"><![CDATA[
+                    var shell = org.mozilla.javascript.tools.shell.Main;
+                    var args = ["-e","var a='STRING';"];
+                    shell.exec(args);
+
+                    var shellGlobal = shell.global;
+
+                    //grab functions from shell global and place in current global
+                    var load=shellGlobal.load;
+                    var print=shellGlobal.print;
+                    var defineClass=shellGlobal.defineClass;
+                    var deserialize=shellGlobal.deserialize;
+                    var doctest=shellGlobal.doctest;
+                    var gc=shellGlobal.gc;
+                    var help=shellGlobal.help;
+                    var loadClass=shellGlobal.loadClass;
+                    var quit=shellGlobal.quit;
+                    var readFile=shellGlobal.readFile;
+                    var readUrl=shellGlobal.readUrl;
+                    var runCommand=shellGlobal.runCommand;
+                    var seal=shellGlobal.seal;
+                    var serialize=shellGlobal.serialize;
+                    var spawn=shellGlobal.spawn;
+                    var sync=shellGlobal.sync;
+                    var toint32=shellGlobal.toint32;
+                    var version=shellGlobal.version;
+                    var environment=shellGlobal.environment;
+
+                    var console ={
+                        log : print,
+                        debug : print
+                    }
+
+                    //add in built-in function reduce for js implementations that do not support it
+                    //this code is from https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Array/Reduce#Compatibility
+                    //MIT licensed, according to https://developer.mozilla.org/Project:Copyrights
+                    function reduce(arr,fun /*, initial*/) {
+                        var len = arr.length >>> 0;
+                        if (typeof fun != "function")
+                            throw new TypeError();
+
+                        // no value to return if no initial value and an empty array
+                        if (len == 0 && arguments.length == 2)
+                            throw new TypeError();
+
+                        var i = 0;
+                        if (arguments.length >= 3) {
+                            var rv = arguments[2];
+                        }
+                        else {
+                            do {
+                                if (i in arr) {
+                                    var rv = arr[i++];
+                                    break;
+                                }
+
+                                // if array contains no values, no initial value to return
+                                if (++i >= len)
+                                    throw new TypeError();
+                            }
+                            while (true);
+                        }
+
+                        for (; i < len; i++) {
+                            if (i in arr)
+                                rv = fun.call(undefined, rv, arr[i], i, arr);
+                        }
+
+                        return rv;
+                    }
+                    
+    
+                    @{text}
+            ]]></script>
+        </sequential>
+    </macrodef>
+</project>
