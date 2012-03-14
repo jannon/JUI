@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>JUI Traydialog Test Suite</title>
+
+	<script src="../../jquery.js"></script>
+	<script src="../../jquery-ui.js"></script>
+	<script src="../../../external/jquery.bgiframe-2.1.2.js"></script>
+	<script src="../../resource_loader.js"></script>
+	<script>
+	loadResources({
+		css: [ "ui.traydialog" ],
+		js: [
+			"ui/jquery.ui.traydialog.js"
+		]
+	});
+	</script>
+
+    <link rel="stylesheet" href="../../jquery-ui-1.8.18.css">
+    <link rel="stylesheet" href="../../../external/qunit.css">
+	<script src="../../../external/qunit.js"></script>
+	<script src="../../jquery.simulate.js"></script>
+	<script src="../testsuite.js"></script>
+
+	<script src="traydialog_core.js"></script>
+	<script src="traydialog_defaults.js"></script>
+	<script src="traydialog_events.js"></script>
+	<script src="traydialog_methods.js"></script>
+	<script src="traydialog_options.js"></script>
+
+	<script>
+	// disable this testsuite for testswarm only - until we fix it from freezing IE6
+	var url = window.location.search;
+	url = decodeURIComponent( url.slice( url.indexOf("swarmURL=") + 9 ) );
+	if ( url && url.indexOf("http") == 0 ) {
+		// reset config to kill previous tests; make sure testsuite.js is loaded afterwards to init the testswarm script
+		QUnit.init();
+		test("traydialog", function() { ok(true, "disabled traydialog testsuite"); });
+	}
+	</script>
+	<script src="../swarminject.js"></script>
+</head>
+<body>
+
+<h1 id="qunit-header">JUI Traydialog Test Suite</h1>
+<h2 id="qunit-banner"></h2>
+<div id="qunit-testrunner-toolbar"></div>
+<h2 id="qunit-userAgent"></h2>
+<ol id="qunit-tests"></ol>
+<div id="qunit-fixture">
+
+</div>
+</body>
+</html>

@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>JUI Unit Tests</title>
+
+	<link rel="stylesheet" href="../jquery.ui.core.css">
+	<link rel="stylesheet" href="../jquery.ui.theme.css">
+	<style>
+	body {
+		font-size: 62.5%;
+	}
+	.ui-widget-header {
+		padding: 0.2em 0.5em;
+		margin: 0;
+	}
+	.ui-widget-content {
+		padding: 1em;
+		margin-bottom: 1em;
+	}
+	ul {
+		margin: 0;
+		list-style: none;
+	}
+	li {
+		line-height: 2em;
+	}
+	</style>
+
+	<script src="../jquery.js"></script>
+	<script src="../jquery-ui.js"></script>
+	<script>
+	$(function() {
+		$( "#main" )
+			.addClass( "ui-widget" )
+			.find( "h1, h2" )
+				.addClass( "ui-widget-header ui-corner-top" )
+				.next()
+					.addClass( "ui-widget-content ui-corner-bottom" );
+		
+	});
+	</script>
+</head>
+<body>
+
+<div id="main">
+	<h1>JUI Unit Tests</h1>
+	<div>
+		<h2>Full Test Suite</h2>
+		<ul>
+			<li><a href="all.html">All</a></li>
+		</ul>
+
+<!--		<h2>Interactions</h2>
+		<ul>
+			<li><a href="draggable/draggable.html">Draggable</a></li>
+			<li><a href="droppable/droppable.html">Droppable</a></li>
+			<li><a href="resizable/resizable.html">Resizable</a></li>
+			<li><a href="selectable/selectable.html">Selectable</a></li>
+			<li><a href="sortable/sortable.html">Sortable</a></li>
+		</ul>-->
+
+		<h2>Widgets</h2>
+		<ul>
+			<li><a href="abcselect/aabcselect.html">Abcselect</a></li>
+			<li><a href="radioset/radioset.html">Radioset</a></li>
+			<li><a href="traydialog/traydialog.html">Traydialog</a></li>
+		</ul>
+
+		<!--<h2>Utilities</h2>
+		<ul>
+			<li><a href="position/position.html">Position</a></li>
+		</ul>
+
+		<h2>Effects</h2>
+		<ul>
+			<li><a href="effects/effects.html">Effects</a></li>
+		</ul>-->
+	</div>
+</div>
+
+</body>
+</html>

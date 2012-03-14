@@ -15,12 +15,13 @@
  */
 (function($) {
     //TODO: More standard positioning, like using the jquery ui positioning
+	//TODO: Make this obsolete by augmenting dialog instead
     /**
      * The traydialog is a compact dialog that slides out horizontally.  It only contains the 
      * content area of a dialog and not the titlebar or normal button pane. The element that
      * the traydialog is created on is actually the element that, when clicked, causes the 
      * traydialog to open.  It is thin wrapper for the main jQuery UI Dialog widget.  Most of the 
-     * options are passesd through to that widget
+     * options are passed through to that widget
      * @require UI Core
      * @require UI Widget
      * @require UI Dialog
@@ -37,6 +38,7 @@
      * </pre>
      */
     $.widget("ui.traydialog", {
+    	version: "@VERSION",
         /**
          * Default options for the widget.
          */
@@ -111,49 +113,64 @@
          * Creates the widget.
          */
         _create: function() {
-            var self = this,
-                id = self.element.attr("id"),
-                el = self.element.click(function() {
-                        self.open.call(self);
+            var me = this,
+                id = this.element.attr("id") || ("tray_" + $.ui.traydialog.uuid++),
+                el = this.element.attr("id", id)
+                	.click(function() {
+                        me.open.call(me);
                     }).css({ cursor: 'pointer'}),
-                options = self.options,
-                height = (options.height === 'auto') ? options.height : options.height + "px",
-                minHeight = (options.minHeight) ? options.minHeight + 'px' : '0px',
-                dlg = (this.dlg = $('<div/>')).addClass('ui-traydialog-content').appendTo($('body')).css({'display':'inline-block'}).dialog({
+                o = this.options,
+                height = (o.height === 'auto') ? o.height : o.height + "px",
+                minHeight = (o.minHeight) ? o.minHeight + 'px' : '0px',
+                dlg;
+            if (o.content) {
+                $("#" + o.content).show().appendTo(this.dlg);
+            }
+
+            dlg = (this.dlg = $('<div id="' + id + '_dlg"></div>')).addClass('ui-traydialog-content').appendTo($('body')).css({'display':'inline-block'})
+//            	.bind("dialogopen", function(e, ui) {
+//                	me._trigger("afteropen", e, ui);
+//                })
+                .bind("dialogclose", function(e, ui) {
+                	me._trigger("afterclose", e, ui);
+                })
+                .dialog({
                     resizable: false,
-                    autoOpen: options.autoOpen,
-                    width: options.width,
-                    height: options.height,
-                    minWidth: options.minWidth,
-                    minHeight: options.minHeight,
+                    autoOpen: o.autoOpen,
+                    width: o.width,
+                    height: o.height,
+                    minWidth: o.minWidth,
+                    minHeight: o.minHeight,
                     draggable: false,
-                    show: 'slide',
+                    show: {
+                        effect: 'slide',
+                        complete: function() {
+                            me._trigger('afteropen');
+                        }
+                    },
+//                    hide: {
+//                        effect: 'slide',
+//                        complete: function() {
+//                            me._trigger('afterclose');
+//                        }
+//                    },
                     hide: 'slide',
-                    open: function(event, ui) {
-                        $(this).css({'min-height':minHeight, 'height':height});
+                    position: this._getPosition(),
+                    open: function(e, ui) {
+                        //$(this).css({'min-height':minHeight, 'height':height});
                         setTimeout(function() {
-                            self.dlg.parent().focus();
+                            me.dlg.parent().focus();
                         }, 600);
                     },
-                    dialogClass: 'ui-traydialog ui-traydialog-' + options.buttonDisplay + '-buttons',
-                    buttons: options.buttons
+                    dialogClass: 'ui-traydialog ui-traydialog-' + o.buttonDisplay + '-buttons',
+                    buttons: o.buttons
                 });
     
-                if (id === null || id === undefined || id === "") {
-                    id = "tray_" + $.ui.traydialog.count++;
-                }
-                el.attr("id", id);
-                dlg.attr("id", id + "_dlg");
-    
-                if (options.content) {
-                    $("#" + options.content).show().appendTo(this.dlg);
-                }
-    
-                self.dlg.parent().focusout(function(e) {
+                this.dlg.parent().focusout(function(e) {
                     if (e && e.type !== 'click') {
                         var target = e.originalEvent.explicitOriginalTarget,
                             parents = $(target).parentsUntil(".ui-traydialog").andSelf();
-                        if (target === self.element[0] || self.dlg.parent().has(target)) {
+                        if (target === me.element[0] || me.dlg.parent().has(target)) {
                             //TODO: figure out how to make this work with timepickrs in the dialog (or anything that relies on having focus)
     //                            setTimeout(function() {
     //                                self.dlg.parent().focus();
@@ -162,46 +179,42 @@
                             return;
                         }
                     }
-                    self.close.call(self);
+                    me.close.call(me);
                 });
         },
         /**
          * Destroys the widget, returning the element to it's original state
          */
         destroy: function() {
-            $.Widget.prototype.destroy.apply(this, arguments);
+        	var wrapper = this.dlg.parents(".ui-effects-wrapper"); 
+        	if (wrapper.length !== 0) {
+        		wrapper.children().unwrap();
+        	}
             this.dlg.dialog("destroy");
             this.dlg.empty().remove();
+            $.Widget.prototype.destroy.apply(this, arguments);
         },
         /**
          * Opens the dialog
          */
         open: function() {
             if (this._trigger("beforeopen")) {
-                var pos = this.element.offset(),
-                options = this.options,
-                w = this.element.outerWidth(),
-                h = this.element.outerHeight(),
-                posX = this.options.posX || (this.options.offsetX ? (pos.left + w + options.offsetX) : "center"),
-                posY = this.options.posY || (this.options.offsetY ? (pos.top - $(document).scrollTop() + (1 + (h-options.offsetY)/2)) : "center");
-                pos = [posX, posY];
-                this.dlg.dialog('option', 'position', pos);
-                if (this.options.src) {
-                    this.dlg.load(this.options.src);
-                } else if (options.content) { 
-                    $("#" + options.content).show().appendTo(this.dlg);
+                var o = this.options;
+                //this.dlg.dialog('option', 'position', this._getPosition());
+                if (o.src) {
+                    this.dlg.load(o.src);
+                } else if (o.content) { 
+                    $("#" + o.content).show().appendTo(this.dlg);
                 }
                 this.dlg.dialog("open");
-                this._trigger("afteropen");
             }
         },
         /**
          * Closes the dialog
          */
         close: function() {
-            if (this._trigger("beforeclose")) {
-                this.dlg.dialog("close");
-                this._trigger("afterclose");
+        	if (this._trigger("beforeclose")) {
+            	this.dlg.dialog("close");
             }
         },
         /**
@@ -210,12 +223,40 @@
         _setOption: function(option, value) {
             $.Widget.prototype._setOption.apply(this, arguments);
             
-            if (option === "buttons") {
-                this.dlg.dialog("option", "buttons", value);
+            switch(option) {
+                case "buttons":
+                    this.dlg.dialog("option", "buttons", value);
+                    break;
+                case "posY":
+                case "posX":
+                case "offsetY":
+                case "offsetX":
+                    this.dlg.dialog("option", "position", this._getPosition());
+                    break;
             }
+        },
+        /**
+         * Calculates the position the dialog should be in based on the options
+         */
+        _getPosition: function() {
+        	var pos = this.element.offset(),
+            	o = this.options,
+            	w = this.element.outerWidth(),
+            	h = this.element.outerHeight(),
+            	posX = o.posX || (o.offsetX ? Math.round(pos.left + w + o.offsetX) : "center"),
+            	posY = o.posY || (o.offsetY ? Math.round(pos.top - $(document).scrollTop() + (1 + (h - o.offsetY)/2)) : "center");
+            pos = [posX, posY];
+            console.log("pos", pos);
+            return pos;
+        },
+        /**
+         * Returns the dialog element
+         */
+        dialog: function() {
+        	return this.dlg.dialog("widget");
         }
     });
-    $.ui.traydialog.count = 0;
+    $.ui.traydialog.uuid = 0;
     
     /**
      * Event fired before the dialog opens.  Returning false from the event handler
@@ -320,4 +361,4 @@
      * @memberof ui.traydialog
      * @name blockbuttons
      */
-})(jQuery);
+}(jQuery));

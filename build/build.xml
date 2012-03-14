@@ -252,11 +252,6 @@
             <fileset dir="${ui.dir}/" includes="*.txt" />
         </copy>
 
-        <!--
-        <copy overwrite="true" todir="${dist.dir}/demos/">
-            <fileset dir="${ui.dir}/demos/" />
-        </copy>
-
         <copy overwrite="true" todir="${dist.dir}/external/">
             <fileset dir="${ui.dir}/external/" />
         </copy>
@@ -264,11 +259,10 @@
         <copy overwrite="true" todir="${dist.dir}/tests/">
             <fileset dir="${ui.dir}/tests/" />
         </copy>
-
-        <copy overwrite="true" todir="${dist.dir}/themes/">
+    	<copy overwrite="true" todir="${dist.dir}/themes/">
             <fileset dir="${ui.dir}/themes/" />
         </copy>
-        -->
+
         <echo message="Files copied." />
     </target>
 
